@@ -1,4 +1,4 @@
-[1] "init at 2021-08-04 22:45:04"
+[1] "init at 2021-08-04 23:42:48"
 
 > rm(list = ls()[!"echo" %in% ls()])
 
@@ -527,6 +527,10 @@
 
 > source("./lib/load.R")
 
+> library(kableExtra)
+
+> library(magrittr)
+
 > d <- readRDS("./data/1A_compiled")
 
 > d$n <- 1
@@ -566,4 +570,67 @@
 [1] "working on y_reval"
 
 > writexl::write_xlsx(o, "./out/t1.xlsx")
-[1] "done at 2021-08-04 22:46:46"
+
+> knitr::kable(o[["t0"]], format = "html", align = "lrrlrlr", 
++     escape = F, row.names = F, caption = "Balance between groups before matcing") %>% 
++     kable_styling(full_width = F, bootstrap_options = c("hover", 
++         "condensed", "bordered"), font_size = 14, position = "left") %>% 
++     footnote(general = paste0("INT is the comparison groups (IBBIS integrated groups), ONE is the 1A treatment group"), 
++         footnote_as_chunk = F, escape = T, general_title = "") %>% 
++     kableExtra::as_image(file = "./out/t1_crude.png")
+[1] "./out/t1_crude.png"
+attr(,"class")
+[1] "knit_image_paths" "knit_asis"       
+attr(,"dpi")
+[1] 300
+
+> form <- xs[!xs %in% c("n", "id", "index", "treat")]
+
+> form <- paste0("as.num(treat=='ONE')~", paste0(form, 
++     collapse = "+"))
+
+> m <- glm(form, binomial, d)
+
+> print(list(`fit has issues: ` = summary(m)))
+$`fit has issues: `
+
+Call:
+glm(formula = form, family = binomial, data = d)
+
+Deviance Residuals: 
+   Min      1Q  Median      3Q     Max  
+-2.104   0.000   0.000   0.000   1.688  
+
+Coefficients:
+              Estimate Std. Error z value Pr(>|z|)
+(Intercept)  8.790e+02  7.538e+04   0.012    0.991
+male         1.354e+00  1.130e+00   1.198    0.231
+age          7.009e-02  5.353e-02   1.309    0.190
+unempl      -2.270e+02  1.933e+04  -0.012    0.991
+b_46         2.357e+01  1.193e+04   0.002    0.998
+b_47         2.267e+01  1.835e+04   0.001    0.999
+b_84        -2.792e+00  1.777e+00  -1.572    0.116
+b_85        -6.183e-01  1.272e+00  -0.486    0.627
+b_86         2.405e+01  2.814e+04   0.001    0.999
+b_87         2.504e+01  2.433e+04   0.001    0.999
+b_88         4.779e-01  1.424e+00   0.336    0.737
+b_99        -1.767e+00  1.845e+00  -0.958    0.338
+y_none       3.608e-02  1.694e-01   0.213    0.831
+y_dgp       -7.681e-03  1.927e-01  -0.040    0.968
+y_edu        2.968e-01  2.657e+02   0.001    0.999
+y_sgdp       4.404e-02  1.722e-01   0.256    0.798
+y_baby       1.093e-01  1.865e-01   0.586    0.558
+y_flex       5.258e-01  8.449e+02   0.001    1.000
+y_cash       1.610e+00  4.031e+03   0.000    1.000
+y_reval      3.342e-01  7.228e+03   0.000    1.000
+
+(Dispersion parameter for binomial family taken to be 1)
+
+    Null deviance: 657.219  on 566  degrees of freedom
+Residual deviance:  34.771  on 547  degrees of freedom
+AIC: 74.771
+
+Number of Fisher Scoring iterations: 23
+
+
+[1] "done at 2021-08-04 23:45:40"

@@ -49,12 +49,10 @@ source("./lib/mapping.R",
 source("./lib/compile.R", 
        echo = echo, print.eval = echo, max.deparse.length = 1e5)
 
-# post SAP-commitment
-
+# post SAP-commitment:
 # matching
 source("./lib/match.R",
        echo = echo, print.eval = echo, max.deparse.length = 1e5)
-
 
 # done
 print(paste0("done at ", Sys.time()))
