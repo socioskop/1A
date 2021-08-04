@@ -34,8 +34,8 @@ dgrid <- dgrid[order(dgrid$date),]
 dgrid <- merge(dgrid, dates, by="date", all.y=T)
 
 # extract b-codes (signifying employment)
-b <- d[,c("id", "index", bs)]
-b <- data.table::melt(b, id.vars=c("id", "index"), variable.name="time", value.name="b")
+b <- data.table::data.table(d[,c("id", "index", bs)])
+b <- data.table::melt.data.table(b, id.vars=c("id", "index"), variable.name="time", value.name="b")
 b$time <- gsub("branche_", "b_", as.chr(b$time))
 b$year <- as.num(substr(b$time, 3, 6))
 b$month <- as.num(substr(b$time, 8, 9))
@@ -59,6 +59,7 @@ y$year <- as.num(paste0("20", substr(y$time, 3, 4)))
 y$week <- as.num(substr(y$time, 5, 6))
 y$date <- ISOweek::ISOweek2date(paste0(y$year, "-W", stringr::str_pad(y$week, 2, pad="0"), "-6"))
 y$time <- NULL
+y[is.na(y), y := "N/A"] # hardcoding NAs are important, as they consitute a value. Regular NAs added while merging or similar are not valid values
 
 # join y and b codes in weekly indexes
 e <- merge(b, y, by=c("id", "index", "year", "date"))

@@ -8,7 +8,6 @@ source("./lib/load.R")
 # reading processed dream data (still long format)
 e <- readRDS("./data/process_dream")
 e <- data.table(e, key=c("id", "time"))
-e[is.na(y), y := "N/A"] # hardcoding NAs are important, as they consitute a value. Regular NAs added while merging or similar are not valid values
 
 # approximate first week of eligibility (3 weeks after first sgdp transfer) (sgdp: 'Sygedagpenge', sickness benefit)
 e[, sgdp      := as.num(substr(y, 1, 2)=="89" | substr(y, 1, 3)=="774"), by="id"]

@@ -1,4 +1,4 @@
-[1] "init at 2021-08-04 13:20:22"
+[1] "init at 2021-08-04 15:55:49"
 
 > rm(list = ls()[!"echo" %in% ls()])
 
@@ -94,98 +94,45 @@
 
 > source("./lib/load.R")
 
-> library(tidyverse)
+> p <- bind_rows(readRDS("./data/1A"), readRDS("./data/ctrls"))
 
-> e <- bind_rows(readRDS("./data/IBBIS")[, c("cpr", 
-+     "id", "index", "treat", "study", "sickleavedate")], readRDS("./data/1A")[, 
-+     c("cpr", "id", "index", "treat", "study")])
-
-> e <- merge(e, readRDS("./data/entry"), by = "id", 
-+     all = T)
-
-> e$male <- as.num(substr(e$cpr, 9, 10))
-
-> e$male <- ifelse(e$male/2 != round(e$male/2), 1, ifelse(e$male/2 == 
-+     round(e$male/2), 0, NA))
-
-> e$age <- substr(e$cpr, 1, 6)
-
-> e$age <- paste0(substr(e$age, 1, 2), "-", substr(e$age, 
-+     3, 4), "-", ifelse(substr(e$age, 5, 6) > "20", "19", "20"), 
-+     substr(e$age, 5, 6))
-
-> e$age <- floor(as.num(as.Date(e$index.x) - as.Date(e$age, 
-+     "%d-%m-%Y"))/365.25)
-
-> e$cpr <- NULL
-
-> e$id <- as.chr(e$id)
-
-> plot(as.num(e$index.x), as.num(e$index.y))
-
-> plot(as.num(e$index.w), as.num(e$index.y))
-
-> summary(as.num(e$index.x) - as.num(e$index.y))
-   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-      0       0       0       0       0       0     830 
-
-> summary(as.num(e$index.w) - as.num(e$index.y))
-   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
-  0.000   2.000   3.000   2.938   4.000   5.000     830 
-
-> summary(as.num(e$index.w) - as.num(e$sgdp.date))
-   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
- -21.00   42.00   49.00   54.02   63.00  182.00     830 
-
-> summary(as.num(e$sickleavedate) - as.num(e$sgdp.date))
-   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
--332.00  -26.00  -25.00  -25.72  -23.00   21.00     982 
-
-> d <- readRDS("./data/process_dream")
-
-> d <- data.table(d[d$time < 0 & d$time >= -104, ], 
-+     key = c("id", "time"))
-
-> dict <- unique(readxl::read_xlsx("./raw/Dansk-Branchekode-2007-(DB07)-v3-2014.xlsx")[, 
-+     c("HOVEDGRUPPEKODE", "HOVEDGRUPPE")])
-
-> colnames(dict) <- c("code", "labl")
-
-> dict$code <- stringr::str_pad(dict$code, 2, pad = "0")
-
-> codes <- unique(dict$code)
-
-> for (c in codes) {
-+     if (sum(substr(d$b, 1, 2) == c, na.rm = T) == 0) {
-+         next
-+     }
-+     name <- paste0("b", c)
-+     d[, `:=`((name), as.num(substr(b, 1, 2) == c))]
-+     d[, `:=`((name), max(get(name))), by = "id"]
+> if (length(unique(p$cpr)) < nrow(p)) {
++     stop("dupes present, need fixing...")
++ } else {
++     print("population is defined, no dupes")
 + }
+[1] "population is defined, no dupes"
 
-> saveRDS(e, "./data/1A_compiled")
+> saveRDS(p, "./data/pop")
 
-> d <- e
+> d <- readRDS("./data/dream")
 
-> tab <- data.frame(var = colnames(d), stringsAsFactors = F)
+> if (sum(!(p$cpr %in% d$cpr))) {
++     stop("some individuals not linked to DREAM db")
++ } else {
++     print("all individuals linked to DREAM db")
++ }
+[1] "all individuals linked to DREAM db"
 
-> tab$uniques <- sapply(d, function(x) length(unique(x)))
+> d <- d[d$cpr %in% p$cpr & d$id %in% p$id, ]
 
-> tab$NAs <- sapply(d, function(x) sum(is.na(x)))
+> if (sum(!p$cpr %in% d$cpr)) {
++     stop("some individuals not linked to DREAM db")
++ } else {
++     print("all individuals linked to DREAM db")
++ }
+[1] "all individuals linked to DREAM db"
 
-> tab$chars <- sapply(d, function(x) paste0(unlist(names(table(nchar(trimws(x))))), 
-+     collapse = ", "))
+> if (sum(!p$id %in% d$id)) {
++     stop("some ids not linked to DREAM db")
++ } else {
++     print("all ids linked to DREAM db")
++ }
+[1] "all ids linked to DREAM db"
 
-> tab$mean <- sapply(d, function(x) round(mean(x), 1))
+> d <- merge(p, d, by = c("id", "cpr"))
 
-> tab$min <- sapply(d, function(x) round(min(as.num(x)), 
-+     1))
-
-> tab$max <- sapply(d, function(x) round(max(as.num(x)), 
-+     1))
-
-> writexl::write_xlsx(tab, "./out/desc_pop.xlsx")
+> saveRDS(d, "./data/compile_pop")
 
 > rm(list = ls()[!"echo" %in% ls()])
 
@@ -233,10 +180,10 @@
 
 > dgrid <- merge(dgrid, dates, by = "date", all.y = T)
 
-> b <- d[, c("id", "index", bs)]
+> b <- data.table::data.table(d[, c("id", "index", bs)])
 
-> b <- data.table::melt(b, id.vars = c("id", "index"), 
-+     variable.name = "time", value.name = "b")
+> b <- data.table::melt.data.table(b, id.vars = c("id", 
++     "index"), variable.name = "time", value.name = "b")
 
 > b$time <- gsub("branche_", "b_", as.chr(b$time))
 
@@ -276,6 +223,8 @@
 
 > y$time <- NULL
 
+> y[is.na(y), `:=`(y, "N/A")]
+
 > e <- merge(b, y, by = c("id", "index", "year", "date"))
 
 > saveRDS(e, "./data/process_dream")
@@ -287,8 +236,6 @@
 > e <- readRDS("./data/process_dream")
 
 > e <- data.table(e, key = c("id", "time"))
-
-> e[is.na(y), `:=`(y, "N/A")]
 
 > e[, `:=`(sgdp, as.num(substr(y, 1, 2) == "89" | substr(y, 
 +     1, 3) == "774")), by = "id"]
@@ -384,4 +331,190 @@
 > e <- unique(e)
 
 > saveRDS(e, "./data/outcs")
-[1] "done at 2021-08-04 13:22:32"
+
+> rm(list = ls()[!"echo" %in% ls()])
+
+> source("./lib/load.R")
+
+> branches <- unique(readxl::read_xlsx("./raw/Dansk-Branchekode-2007-(DB07)-v3-2014.xlsx")[, 
++     c("HOVEDGRUPPEKODE", "HOVEDGRUPPE")])
+
+> colnames(branches) <- c("code", "labl")
+
+> branches$code <- stringr::str_pad(branches$code, 2, 
++     pad = "0")
+
+> y_codes <- list(none = c("N/A"), dgp = c("111", "115", 
++     "213", "217"), edu = c("651", "652", "521"), sgdp = c("774", 
++     "890", "893", "897", "899"), baby = c("881"), flex = c("740", 
++     "771"), disab = c("783"), pens = c("998", "621", "996"), 
++     cash = c("130", "133", "140", "143", "700", "723", "727", 
++         "730", "733", "870"), reval = c("755", "764", "810", 
++         "817", "873"))
+
+> mapping <- list(branches = branches, y_codes = y_codes)
+
+> saveRDS(mapping, "./data/mapping")
+
+> rm(list = ls()[!"echo" %in% ls()])
+
+> source("./lib/load.R")
+
+> library(tidyverse)
+
+> e <- bind_rows(readRDS("./data/ctrls")[, c("cpr", 
++     "id", "index", "treat", "study", "sickleavedate")], readRDS("./data/1A")[, 
++     c("cpr", "id", "index", "treat", "study")])
+
+> e <- merge(e, readRDS("./data/entry"), by = "id", 
++     all = F)
+
+> e$male <- as.num(substr(e$cpr, 9, 10))
+
+> e$male <- ifelse(e$male/2 != round(e$male/2), 1, ifelse(e$male/2 == 
++     round(e$male/2), 0, NA))
+
+> e$age <- substr(e$cpr, 1, 6)
+
+> e$age <- paste0(substr(e$age, 1, 2), "-", substr(e$age, 
++     3, 4), "-", ifelse(substr(e$age, 5, 6) > "20", "19", "20"), 
++     substr(e$age, 5, 6))
+
+> e$age <- floor(as.num(as.Date(e$index.x) - as.Date(e$age, 
++     "%d-%m-%Y"))/365.25)
+
+> e$cpr <- NULL
+
+> plot(as.num(e$index.x), as.num(e$index.y))
+
+> plot(as.num(e$index.w), as.num(e$index.y))
+
+> summary(as.num(e$index.x) - as.num(e$index.y))
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+      0       0       0       0       0       0 
+
+> summary(as.num(e$index.w) - as.num(e$index.y))
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+  0.000   2.000   3.000   2.938   4.000   5.000 
+
+> summary(as.num(e$index.w) - as.num(e$sgdp.date))
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+ -21.00   42.00   49.00   54.02   63.00  182.00 
+
+> summary(as.num(e$sickleavedate) - as.num(e$sgdp.date))
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+-332.00  -26.00  -25.00  -25.72  -23.00   21.00     152 
+
+> d <- readRDS("./data/process_dream")
+
+> d <- d[d$id %in% e$id, ]
+
+> d <- data.table(d[d$time < 0 & d$time >= -104, ], 
++     key = c("id", "time"))
+
+> mapping <- readRDS("./data/mapping")
+
+> codes <- unique(mapping$branches$code)
+
+> for (c in codes) {
++     if (sum(substr(d$b, 1, 2) == c, na.rm = T) == 0) {
++         next
++     }
++     name <- paste0("b_", c)
++     d[, `:=`((name), as.num(substr(b, 1, 2) == c))]
++     d[, `:=`((name), as.num(sum(get(name), na.rm = T) >= 1)), 
++         by = "id"]
++ }
+
+> bs <- paste0("b_", codes)
+
+> bs <- bs[bs %in% colnames(d)]
+
+> codes <- mapping$y_codes
+
+> for (c in names(codes)) {
++     cs <- codes[[c]]
++     if (sum(d$y %in% cs, na.rm = T) == 0) {
++         next
++     }
++     name <- paste0("y_", c)
++     d[, `:=`((name), as.num(y %in% cs))]
++     d[, `:=`((name), sum(get(name), na.rm = T)), by = "id"]
++ }
+
+> ys <- paste0("y_", names(codes))
+
+> ys <- ys[ys %in% colnames(d)]
+
+> d <- unique(as.data.frame(d)[, c("id", bs, ys)])
+
+> d[sapply(d, is.infinite)] <- NA
+
+> drop <- sapply(d[, bs], function(x) mean(x, na.rm = T))
+
+> d[, bs[drop < 0.05]] <- NULL
+
+> bs <- bs[bs %in% colnames(d)]
+
+> e <- merge(e, d, by = "id")
+
+> e$id <- as.chr(paste0("i", e$id))
+
+> d <- e
+
+> tab <- data.frame(var = colnames(d), stringsAsFactors = F)
+
+> tab$uniques <- sapply(d, function(x) length(unique(x)))
+
+> tab$NAs <- sapply(d, function(x) sum(is.na(x)))
+
+> tab$chars <- sapply(d, function(x) paste0(unlist(names(table(nchar(trimws(x))))), 
++     collapse = ", "))
+
+> tab$mean <- sapply(d, function(x) round(mean(x, na.rm = T), 
++     2))
+
+> tab$min <- sapply(d, function(x) round(min(as.num(x), 
++     na.rm = T), 1))
+
+> tab$max <- sapply(d, function(x) round(max(as.num(x), 
++     na.rm = T), 1))
+
+> print(tab)
+             var uniques NAs chars     mean   min   max
+1             id     567   0     5       NA   Inf  -Inf
+2        index.x     366   0    10 17434.93 16916 17885
+3          treat       2   0     3       NA   Inf  -Inf
+4          study       3   0  1, 3       NA     1     2
+5  sickleavedate     302 152    10 17221.83 16554 17597
+6        index.y     366   0    10 17434.93 16916 17885
+7        index.w     123   0    10 17437.86 16921 17887
+8      sgdp.date     129   0    10 17383.84 16753 17831
+9           male       2   0     1     0.28     0     1
+10           age      44   0     2    42.48    21    64
+11          b_46       2   0     1     0.06     0     1
+12          b_47       2   0     1     0.10     0     1
+13          b_84       2   0     1     0.10     0     1
+14          b_85       2   0     1     0.16     0     1
+15          b_86       2   0     1     0.06     0     1
+16          b_87       2   0     1     0.08     0     1
+17          b_88       2   0     1     0.16     0     1
+18          b_99       2   0     1     0.10     0     1
+19        y_none      92   0  1, 2    71.05     0    99
+20         y_dgp      66   0  1, 2     7.55     0    88
+21         y_edu      35   0  1, 2     3.63     0    91
+22        y_sgdp      54   0  1, 2    15.11     4    90
+23        y_baby      37   0  1, 2     2.82     0    78
+24        y_flex       8   0  1, 2     0.83     0    91
+25        y_cash      16   0  1, 2     0.49     0    51
+26       y_reval       4   0  1, 2     0.09     0    31
+
+> writexl::write_xlsx(tab, "./out/desc_pop.xlsx")
+
+> e$index <- e$index.x
+
+> e <- e[, c("id", "index", "study", "treat", "male", 
++     "age", bs, ys)]
+
+> saveRDS(e, "./data/1A_compiled")
+[1] "done at 2021-08-04 15:57:33"

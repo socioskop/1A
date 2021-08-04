@@ -26,7 +26,7 @@ source("./lib/get_dream.R",
        echo = echo, print.eval = echo, max.deparse.length = 1e5)
 
 # compile the two populations to one and add dream data
-source("./lib/compile.R", 
+source("./lib/compile_pop.R", 
        echo = echo, print.eval = echo, max.deparse.length = 1e5)
 
 # process dream: convert index date to treatment inclusion date
@@ -39,6 +39,14 @@ source("./lib/build_entry.R",
 
 # build outcomes from dream
 source("./lib/build_outcs.R", 
+       echo = echo, print.eval = echo, max.deparse.length = 1e5)
+
+# build mapping/dictionaries
+source("./lib/mapping.R", 
+       echo = echo, print.eval = echo, max.deparse.length = 1e5)
+
+# compile data for analysis
+source("./lib/compile.R", 
        echo = echo, print.eval = echo, max.deparse.length = 1e5)
 
 # post SAP-commitment
