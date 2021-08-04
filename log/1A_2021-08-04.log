@@ -1,4 +1,4 @@
-[1] "init at 2021-08-04 22:12:10"
+[1] "init at 2021-08-04 22:45:04"
 
 > rm(list = ls()[!"echo" %in% ls()])
 
@@ -514,7 +514,7 @@
 26       y_reval       4   0  1, 2     0.09     0.0    31.0
 27        unempl       7   0     3     4.13     3.8     4.5
 
-> writexl::write_xlsx(tab, "./out/desc_pop.xlsx")
+> writexl::write_xlsx(tab, "./out/desc.xlsx")
 
 > e$index <- e$index.x
 
@@ -522,4 +522,48 @@
 +     "age", "unempl", bs, ys)]
 
 > saveRDS(e, "./data/1A_compiled")
-[1] "done at 2021-08-04 22:13:50"
+
+> rm(list = ls()[!"echo" %in% ls()])
+
+> source("./lib/load.R")
+
+> d <- readRDS("./data/1A_compiled")
+
+> d$n <- 1
+
+> o <- list()
+
+> xs <- c("n", colnames(d)[!colnames(d) %in% c("id", 
++     "study", "n")])
+
+> num <- c("age", "unempl", xs[startsWith(xs, "y_")])
+
+> bin <- c("male", xs[startsWith(xs, "b_")])
+
+> o[["t0"]] <- ttools::ttabulate(d, xs, "treat", num, 
++     bin = bin, cal.date = "index", show.na = T, cens = 0)
+[1] "working on n"
+[1] "working on index"
+[1] "working on treat"
+[1] "working on male"
+[1] "working on age"
+[1] "working on unempl"
+[1] "working on b_46"
+[1] "working on b_47"
+[1] "working on b_84"
+[1] "working on b_85"
+[1] "working on b_86"
+[1] "working on b_87"
+[1] "working on b_88"
+[1] "working on b_99"
+[1] "working on y_none"
+[1] "working on y_dgp"
+[1] "working on y_edu"
+[1] "working on y_sgdp"
+[1] "working on y_baby"
+[1] "working on y_flex"
+[1] "working on y_cash"
+[1] "working on y_reval"
+
+> writexl::write_xlsx(o, "./out/t1.xlsx")
+[1] "done at 2021-08-04 22:46:46"

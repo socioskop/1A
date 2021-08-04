@@ -51,6 +51,11 @@ source("./lib/compile.R",
 
 # post SAP-commitment
 
+# matching
+source("./lib/match.R",
+       echo = echo, print.eval = echo, max.deparse.length = 1e5)
+
+
 # done
 print(paste0("done at ", Sys.time()))
 sink()
