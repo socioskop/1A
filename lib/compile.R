@@ -9,7 +9,6 @@ rm(list=ls()[!"echo" %in% ls()])
 source("./lib/load.R")
 library(tidyverse)
 
-# 
 # read IBBIS main data (rct + master file) and stack with the 1A population
 e <- bind_rows(readRDS("./data/ctrls")[,c("cpr", "id", "index", "treat", "study", "sickleavedate")],
                readRDS("./data/1A")[,c("cpr", "id", "index", "treat", "study")])
@@ -41,6 +40,7 @@ summary(as.num(e$sickleavedate)-as.num(e$sgdp.date)) # Diff from empirical (infe
 # we need to add background covariates from DREAM as other socio-demographic registry sources are not viable in local environment
 d <- readRDS("./data/process_dream")
 d <- d[d$id %in% e$id,]
+u <- d[d$time==0,c("id", "unempl")] # grab unempl measured at baseline for later join 
 d <- data.table(d[d$time<0 & d$time>= -104,], key=c("id", "time")) # we only use two years lookback
 
 mapping <- readRDS("./data/mapping")
@@ -83,11 +83,11 @@ bs <- bs[bs %in% colnames(d)]
 
 # merge with dream covariates 
 e <- merge(e, d, by="id")
+e <- merge(e, u, by="id") # ... and unempl rate at baseline
 e$id <- as.chr(paste0("i", e$id)) # not publishing actual ids
 
-# describe string data
+# basic data description
 d <- e
-
 tab <- data.frame(var=colnames(d), stringsAsFactors = F)
 tab$uniques <- sapply(d, function(x) length(unique(x)))
 tab$NAs <- sapply(d, function(x) sum(is.na(x)))
@@ -96,10 +96,10 @@ tab$mean <- sapply(d, function(x) round(mean(x, na.rm=T), 2))
 tab$min <- sapply(d, function(x) round(min(as.num(x), na.rm=T), 1))
 tab$max <- sapply(d, function(x) round(max(as.num(x), na.rm=T), 1))
 print(tab)
-writexl::write_xlsx(tab, "./out/desc_pop.xlsx")
+writexl::write_xlsx(tab, "./out/desc.xlsx")
  
 # wrap up for analysis purposes
 e$index <- e$index.x
-e <- e[,c("id", "index", "study", "treat", "male", "age", bs, ys)]
+e <- e[,c("id", "index", "study", "treat", "male", "age", "unempl", bs, ys)]
 
 saveRDS(e, "./data/1A_compiled")
