@@ -48,7 +48,7 @@ plot(b$index [b$id>7000], b$index.w[b$id>7000])
 
 b <- merge(dgrid, b, by=c("year", "month"), all=T)
 b$time <- as.num(floor((b$date-b$index.w)/7))
-b <- b[b$time>= -52 & b$time<=110,]
+b <- b[b$time>= -110 & b$time<=110,]
 b <- merge(b, u, by=c("year", "month"), all=T)
 
 # extract y-codes

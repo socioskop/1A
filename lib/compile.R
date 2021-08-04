@@ -11,11 +11,11 @@ library(tidyverse)
 
 # 
 # read IBBIS main data (rct + master file) and stack with the 1A population
-d <- bind_rows(readRDS("./data/IBBIS")[,c("cpr", "id", "index", "treat", "study", "sickleavedate")],
+e <- bind_rows(readRDS("./data/IBBIS")[,c("cpr", "id", "index", "treat", "study", "sickleavedate")],
                readRDS("./data/1A")[,c("cpr", "id", "index", "treat", "study")])
 
 # merge with ctrls derived from the IBBIS-INT groups
-e <- merge(d, 
+e <- merge(e, 
            readRDS("./data/entry"), 
            by="id", all=T)
 
@@ -37,9 +37,16 @@ plot(as.num(e$index.w), as.num(e$index.y)) # should match within week
 summary(as.num(e$index.x)-as.num(e$index.y)) # should be 0
 summary(as.num(e$index.w)-as.num(e$index.y)) # should be a few days
 summary(as.num(e$index.w)-as.num(e$sgdp.date))
-summary(as.num(e$sickleavedate)-as.num(e$sgdp.date))
+summary(as.num(e$sickleavedate)-as.num(e$sgdp.date)) # Diff from empirical (inferred) to reported (partially missing by design) should be around -21. OK.
 
 # we need to add background covariates from DREAM as other socio-demographic registry sources are not viable in local environment
+d <- readRDS("./data/process_dream")
+
+# import map of branches to identify most frequent branches and use them as propensity score factors
+dict <- unique(readxl::read_xlsx("./raw/Dansk-Branchekode-2007-(DB07)-v3-2014.xlsx")[,c("HOVEDGRUPPEKODE", "HOVEDGRUPPE")])
+colnames(dict) <- c("code", "labl")
+dict$code <- stringr::str_pad(dict$code, 2, pad="0")
+
 
 
 # wrap up for analysis purposes
