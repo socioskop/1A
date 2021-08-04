@@ -26,7 +26,7 @@ writexl::write_xlsx(o, "./out/t1.xlsx")
 knitr::kable(o[["t0"]],
              format = "html",
              align = "lrrlrlr" ,
-             escape = F, row.names = F, caption = "Balance between groups before matcing") %>%
+             escape = F, row.names = F, caption = "Balance between groups before matcing") %>% 
   kable_styling(
     full_width = F,
     bootstrap_options = c("hover", "condensed" , "bordered"),
@@ -46,3 +46,4 @@ form <- paste0("as.num(treat=='ONE')~", paste0(form, collapse="+"))
 m <- glm(form, binomial, d)
 print(list("fit has issues: "=summary(m)))
 
+# 
