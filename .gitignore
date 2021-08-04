@@ -1,0 +1,10 @@
+.env
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+data/
+raw/
+sap/
+out/
+Rplots.pdf

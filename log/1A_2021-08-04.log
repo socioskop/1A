@@ -1,0 +1,364 @@
+[1] "init at 2021-08-04 12:20:08"
+
+> rm(list = ls()[!"echo" %in% ls()])
+
+> source("./lib/load.R")
+
+> d <- readxl::read_excel(Sys.getenv("1A"))
+
+> colnames(d) <- c("id", "henv.dato", "cpr", "udr.dato", 
++     "diagnose", "samtykke", "beh.start", "MBSRstart", "beh.slut", 
++     "eftervrn.slut")
+
+> d$id <- stringr::str_pad(d$id, 4, pad = "0")
+
+> d$cpr <- gsub("-", "", d$cpr)
+
+> d$index <- as.Date(d$udr.dato)
+
+> d$treat <- "ONE"
+
+> d$study <- "ONE"
+
+> d$id[startsWith(d$id, "0")] <- paste0("7", substr(d$id, 
++     2, 4))
+
+> d <- d[, c("cpr", "id", "index", "treat", "study")]
+
+> saveRDS(d, "./data/1A")
+
+> rm(list = ls()[!"echo" %in% ls()])
+
+> source("./lib/load.R")
+
+> load(Sys.getenv("ibbis_master"), x <- new.env())
+
+> x <- x$ibbismaster
+
+> load(Sys.getenv("ibbis_rct"), d <- new.env())
+
+> d <- d$ibbisRCTgrand
+
+> d <- d %>% mutate(across(where(is.character), ~na_if(., 
++     "")))
+
+> d$id <- stringr::str_pad(d$pnumber, 4, pad = "0")
+
+> d$index <- as.Date(d$asscompldate)
+
+> d$treat <- d$randomresultpseudo
+
+> d$study <- d$rctallocationopen
+
+> key <- readxl::read_xlsx(Sys.getenv("dream_keys"))
+
+> d$cpr <- gsub("-", "", key$cprnumber[match(d$id, key$pnumber)])
+
+> ctrls <- d[d$treat == "INT" & !is.na(d$treat), c("cpr", 
++     "id", "index", "treat", "study", "sickleavedate")]
+
+> saveRDS(ctrls, "./data/ctrls")
+
+> saveRDS(d, "./data/IBBIS")
+
+> rm(list = ls()[!"echo" %in% ls()])
+
+> source("./lib/load.R")
+
+> load(Sys.getenv("dream"), d <- new.env())
+
+> d <- d$dreamfu24raw
+
+> d$id <- stringr::str_pad(d$pnumber, 4, pad = "0")
+
+> c <- colnames(d)
+
+> ys <- c[substr(c, 1, 2) == "y_"]
+
+> bs <- c[substr(c, 1, 8) == "branche_"]
+
+> key <- readxl::read_xlsx(Sys.getenv("dream_keys"))
+
+> d$cpr <- gsub("-", "", key$cprnumber[match(d$id, key$pnumber)])
+
+> key <- readxl::read_excel(Sys.getenv("1A_keys"))
+
+> d$cpr[d$id %in% key$pnumber] <- gsub("-", "", key$cprnumber)[match(d$id[d$id %in% 
++     key$pnumber], gsub("-", "", key$pnumber))]
+
+> d <- d[, c("id", "cpr", ys, bs)]
+
+> saveRDS(d, "./data/dream")
+
+> rm(list = ls()[!"echo" %in% ls()])
+
+> source("./lib/load.R")
+
+> library(tidyverse)
+
+> d <- bind_rows(readRDS("./data/IBBIS")[, c("cpr", 
++     "id", "index", "treat", "study", "sickleavedate")], readRDS("./data/1A")[, 
++     c("cpr", "id", "index", "treat", "study")])
+
+> e <- merge(d, readRDS("./data/entry"), by = "id", 
++     all = T)
+
+> e$male <- as.num(substr(e$cpr, 9, 10))
+
+> e$male <- ifelse(e$male/2 != round(e$male/2), 1, ifelse(e$male/2 == 
++     round(e$male/2), 0, NA))
+
+> e$age <- substr(e$cpr, 1, 6)
+
+> e$age <- paste0(substr(e$age, 1, 2), "-", substr(e$age, 
++     3, 4), "-", ifelse(substr(e$age, 5, 6) > "20", "19", "20"), 
++     substr(e$age, 5, 6))
+
+> e$age <- floor(as.num(as.Date(e$index.x) - as.Date(e$age, 
++     "%d-%m-%Y"))/365.25)
+
+> e$cpr <- NULL
+
+> e$id <- as.chr(e$id)
+
+> plot(as.num(e$index.x), as.num(e$index.y))
+
+> plot(as.num(e$index.w), as.num(e$index.y))
+
+> summary(as.num(e$index.x) - as.num(e$index.y))
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+      0       0       0       0       0       0     830 
+
+> summary(as.num(e$index.w) - as.num(e$index.y))
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+  0.000   2.000   3.000   2.938   4.000   5.000     830 
+
+> summary(as.num(e$index.w) - as.num(e$sgdp.date))
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+ -21.00   42.00   49.00   54.02   63.00  182.00     830 
+
+> summary(as.num(e$sickleavedate) - as.num(e$sgdp.date))
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+-332.00  -26.00  -25.00  -25.72  -23.00   21.00     982 
+
+> saveRDS(e, "./data/1A_compiled")
+
+> d <- e
+
+> tab <- data.frame(var = colnames(d), stringsAsFactors = F)
+
+> tab$uniques <- sapply(d, function(x) length(unique(x)))
+
+> tab$NAs <- sapply(d, function(x) sum(is.na(x)))
+
+> tab$chars <- sapply(d, function(x) paste0(unlist(names(table(nchar(trimws(x))))), 
++     collapse = ", "))
+
+> tab$mean <- sapply(d, function(x) round(mean(x), 1))
+
+> tab$min <- sapply(d, function(x) round(min(as.num(x)), 
++     1))
+
+> tab$max <- sapply(d, function(x) round(max(as.num(x)), 
++     1))
+
+> writexl::write_xlsx(tab, "./out/desc_pop.xlsx")
+
+> rm(list = ls()[!"echo" %in% ls()])
+
+> source("./lib/load.R")
+
+> d <- readRDS("./data/compile_pop")
+
+> u <- readxl::read_excel(Sys.getenv("unempl"), skip = 2)[, 
++     3:4]
+
+> u$year <- as.num(substr(u$...3, 1, 4))
+
+> u$mmonth <- as.num(substr(u$...3, 6, 7))
+
+> colnames(u) <- c("period", "unempl", "year", "month")
+
+> u <- u[, c("year", "month", "unempl")]
+
+> cs <- colnames(d)
+
+> bs <- cs[grepl("branche_", cs)]
+
+> ys <- cs[startsWith(cs, "y_0") | startsWith(cs, "y_1") | 
++     startsWith(cs, "y_2")]
+
+> dates <- seq(as.Date("2008-01-01"), as.Date("2021-01-01"), 
++     1)
+
+> dates <- dates[lubridate::wday(dates) == 7]
+
+> dates <- data.frame(date = dates, stringsAsFactors = F)
+
+> dgrid <- substr(ys, 3, 6)
+
+> dgrid <- dgrid[substr(dgrid, 1, 1) %in% c("0", "1", 
++     "2")]
+
+> dgrid <- ISOweek::ISOweek2date(paste0("20", substr(dgrid, 
++     1, 2), "-W", substr(dgrid, 3, 4), "-6"))
+
+> dgrid <- data.frame(date = dgrid, month = month(dgrid), 
++     year = year(dgrid))
+
+> dgrid <- dgrid[order(dgrid$date), ]
+
+> dgrid <- merge(dgrid, dates, by = "date", all.y = T)
+
+> b <- d[, c("id", "index", bs)]
+
+> b <- data.table::melt(b, id.vars = c("id", "index"), 
++     variable.name = "time", value.name = "b")
+
+> b$time <- gsub("branche_", "b_", as.chr(b$time))
+
+> b$year <- as.num(substr(b$time, 3, 6))
+
+> b$month <- as.num(substr(b$time, 8, 9))
+
+> b$index.w <- ISOweek::date2ISOweek(b$index)
+
+> b$index.w <- paste0(substr(b$index.w, 1, 9), "6")
+
+> b$index.w <- ISOweek::ISOweek2date(b$index.w)
+
+> plot(b$index[b$id > 7000], b$index.w[b$id > 7000])
+
+> b <- merge(dgrid, b, by = c("year", "month"), all = T)
+
+> b$time <- as.num(floor((b$date - b$index.w)/7))
+
+> b <- b[b$time >= -52 & b$time <= 110, ]
+
+> b <- merge(b, u, by = c("year", "month"), all = T)
+
+> y <- data.table::data.table(d[, c("id", "index", ys)])
+
+> y <- data.table::melt.data.table(y, id.vars = c("id", 
++     "index"), variable.name = "time", value.name = "y")
+
+> y$time <- as.chr(y$time)
+
+> y$year <- as.num(paste0("20", substr(y$time, 3, 4)))
+
+> y$week <- as.num(substr(y$time, 5, 6))
+
+> y$date <- ISOweek::ISOweek2date(paste0(y$year, "-W", 
++     stringr::str_pad(y$week, 2, pad = "0"), "-6"))
+
+> y$time <- NULL
+
+> e <- merge(b, y, by = c("id", "index", "year", "date"))
+
+> saveRDS(e, "./data/process_dream")
+
+> rm(list = ls()[!"echo" %in% ls()])
+
+> source("./lib/load.R")
+
+> e <- readRDS("./data/process_dream")
+
+> e <- data.table(e, key = c("id", "time"))
+
+> e[is.na(y), `:=`(y, "N/A")]
+
+> e[, `:=`(sgdp, as.num(substr(y, 1, 2) == "89" | substr(y, 
++     1, 3) == "774")), by = "id"]
+
+> e[, `:=`(sgdp, dplyr::lead(as.num(sgdp == 1 & dplyr::lag(sgdp, 
++     1) == 1 & dplyr::lag(sgdp, 2) == 1 & dplyr::lag(sgdp, 3) == 
++     1), 3))]
+
+> e[, `:=`(sgdp.init, as.num(sgdp == 1 & dplyr::lag(sgdp) != 
++     1)), by = "id"]
+
+> e[, `:=`(sgdp.id, cumsum(sgdp.init)), by = "id"]
+
+> e[sgdp.init == 1, `:=`(sgdp.date, as_date(date))]
+
+> e[, `:=`(sgdp.dist, as.num(sgdp.date - as_date(index.w)))]
+
+> e$sgdp.date <- NA
+
+> e[sgdp.dist <= 1, `:=`(sgdp.dist.max, max(sgdp.dist, 
++     na.rm = T)), by = "id"]
+
+> e[, `:=`(sgdp.dist.max, max(sgdp.dist.max, na.rm = T)), 
++     by = "id"]
+
+> e[sgdp.dist == sgdp.dist.max, `:=`(sgdp.date, date), 
++     by = "id"]
+
+> e[, `:=`(sgdp.date, as_date(max(sgdp.date, na.rm = T) + 
++     21)), by = "id"]
+
+> f <- e[e$date == e$sgdp.date & is.finite(e$sgdp.date)]
+
+> print(paste0("individuals lost without valid sgdp date: ", 
++     length(unique(e$id)) - length(unique(f$id))))
+[1] "individuals lost without valid sgdp date: 1"
+
+> f <- unique(f[, c("id", "index", "index.w", "sgdp.date")])
+
+> saveRDS(f, "./data/entry")
+
+> rm(list = ls()[!"echo" %in% ls()])
+
+> source("./lib/load.R")
+
+> e <- readRDS("./data/process_dream")[, c("id", "year", 
++     "month", "date", "b", "y", "unempl")]
+
+> i <- readRDS("./data/entry")
+
+> i$id <- i$id[sample(1:nrow(i), size = nrow(i))]
+
+> e <- data.table(e, key = c("id", "date"))
+
+> e$sgdp.date <- i$sgdp.date[match(e$id, i$id)]
+
+> e$time <- as.num(as_date(e$date) - as_date(e$sgdp.date))
+
+> e$time <- floor((e$date - e$sgdp.date)/7)
+
+> e[, `:=`(full, as.num((is.na(y) | (y == "771")) & 
++     !is.na(b)))]
+
+> e[, `:=`(full, dplyr::lead(as.num(full == 1 & dplyr::lag(full, 
++     1) == 1 & dplyr::lag(full, 2) == 1 & dplyr::lag(full, 3) == 
++     1), 3)), by = "id"]
+
+> e[is.na(full), `:=`(full, 0)]
+
+> e[, `:=`(n, 1:.N), by = "id"]
+
+> e[, `:=`(full, TTR::runMax(full, 4)), by = "id"]
+
+> e[, `:=`(full.init, as.num(full == 1 & dplyr::lag(full) != 
++     1)), by = "id"]
+
+> e[time < 0, `:=`(full.init, 0)]
+
+> e[, `:=`(full.id, cumsum(full.init)), by = "id"]
+
+> e[full.init == 1 & full.id == 1, `:=`(full.date, date)]
+
+> e[, `:=`(full.date, min(full.date, na.rm = T)), by = "id"]
+
+> e[date == full.date, `:=`(tte_full, time), by = "id"]
+
+> e[, `:=`(tte_full, min(tte_full, na.rm = T)), by = "id"]
+
+> e[!is.finite(tte_full), `:=`(tte_full, NA)]
+
+> e <- e[, c("id", "sgdp.date", "full.date", "tte_full")]
+
+> e <- unique(e)
+
+> saveRDS(e, "./data/outcs")
+[1] "done at 2021-08-04 12:21:32"
