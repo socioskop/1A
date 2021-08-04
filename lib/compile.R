@@ -41,12 +41,20 @@ summary(as.num(e$sickleavedate)-as.num(e$sgdp.date)) # Diff from empirical (infe
 
 # we need to add background covariates from DREAM as other socio-demographic registry sources are not viable in local environment
 d <- readRDS("./data/process_dream")
+d <- data.table(d[d$time<0 & d$time>= -104,], key=c("id", "time")) # we only use two years lookback
 
 # import map of branches to identify most frequent branches and use them as propensity score factors
 dict <- unique(readxl::read_xlsx("./raw/Dansk-Branchekode-2007-(DB07)-v3-2014.xlsx")[,c("HOVEDGRUPPEKODE", "HOVEDGRUPPE")])
 colnames(dict) <- c("code", "labl")
 dict$code <- stringr::str_pad(dict$code, 2, pad="0")
+codes <- unique(dict$code)
 
+for (c in codes){
+  if (sum(substr(d$b, 1, 2)==c, na.rm=T)==0){next}
+  name <- paste0("b", c)
+  d[, (name) := as.num(substr(b, 1, 2)==c)]
+  d[, (name) := max(get(name)), by="id"]
+}
 
 
 # wrap up for analysis purposes
