@@ -1,4 +1,4 @@
-[1] "init at 2021-08-05 00:19:16"
+[1] "init at 2021-08-05 00:50:11"
 
 > rm(list = ls()[!"echo" %in% ls()])
 
@@ -7,6 +7,8 @@
 > library(kableExtra)
 
 > library(magrittr)
+
+> library(optmatch)
 
 > d <- readRDS("./data/1A_compiled")
 
@@ -21,8 +23,117 @@
 
 > bin <- c("male", xs[startsWith(xs, "b_")])
 
-> o[["t0"]] <- ttools::ttabulate(d, xs, "treat", num, 
-+     bin = bin, cal.date = "index", show.na = T, cens = 0)
+> o[["t1_pre"]] <- ttools::ttabulate(d, xs, "treat", 
++     num, bin = bin, cal.date = "index", show.na = T, cens = 0)
+[1] "working on n"
+[1] "working on index"
+[1] "working on treat"
+[1] "working on male"
+[1] "working on age"
+[1] "working on unempl"
+[1] "working on b_46"
+[1] "working on b_47"
+[1] "working on b_84"
+[1] "working on b_85"
+[1] "working on b_86"
+[1] "working on b_87"
+[1] "working on b_88"
+[1] "working on b_99"
+[1] "working on y_none"
+[1] "working on y_dgp"
+[1] "working on y_edu"
+[1] "working on y_sgdp"
+[1] "working on y_baby"
+[1] "working on y_flex"
+[1] "working on y_cash"
+[1] "working on y_reval"
+
+> knitr::kable(o[["t1_pre"]], format = "html", align = "lrrlrlr", 
++     escape = F, row.names = F, caption = "Balance between groups before matcing") %>% 
++     kable_styling(full_width = F, bootstrap_options = c("hover", 
++         "condensed", "bordered"), font_size = 14, position = "left") %>% 
++     footnote(general = paste0("INT is the comparison groups (IBBIS integrated groups), ONE is the 1A treatment group"), 
++         footnote_as_chunk = F, escape = T, general_title = "") %>% 
++     kableExtra::as_image(file = "./out/t1_crude.png")
+[1] "./out/t1_crude.png"
+attr(,"class")
+[1] "knit_image_paths" "knit_asis"       
+attr(,"dpi")
+[1] 300
+
+> prds <- xs[!xs %in% c("n", "id", "index", "treat", 
++     "unempl", "age")]
+
+> form <- paste0("as.num(treat=='ONE')~poly(age, 2)+", 
++     paste0(prds, collapse = "+"))
+
+> m <- glm(form, binomial, d)
+
+> print(list(`fit is reasonable: ` = summary(m)))
+$`fit is reasonable: `
+
+Call:
+glm(formula = form, family = binomial, data = d)
+
+Deviance Residuals: 
+    Min       1Q   Median       3Q      Max  
+-1.5872  -0.8165  -0.6841   1.2256   2.5686  
+
+Coefficients:
+               Estimate Std. Error z value Pr(>|z|)  
+(Intercept)   -6.019912   2.661345  -2.262   0.0237 *
+poly(age, 2)1 -0.775614   2.474912  -0.313   0.7540  
+poly(age, 2)2  5.289916   2.339272   2.261   0.0237 *
+male           0.189297   0.227760   0.831   0.4059  
+b_46           0.557696   0.396116   1.408   0.1592  
+b_47           0.298354   0.331013   0.901   0.3674  
+b_84          -0.348078   0.363326  -0.958   0.3380  
+b_85          -0.115542   0.292805  -0.395   0.6931  
+b_86          -0.216017   0.492256  -0.439   0.6608  
+b_87           0.214101   0.371047   0.577   0.5639  
+b_88          -0.055564   0.289042  -0.192   0.8476  
+b_99          -0.758312   0.398503  -1.903   0.0571 .
+y_none         0.046632   0.025843   1.804   0.0712 .
+y_dgp          0.056653   0.028248   2.006   0.0449 *
+y_edu          0.004241   0.030346   0.140   0.8888  
+y_sgdp         0.061603   0.026798   2.299   0.0215 *
+y_baby         0.052117   0.026927   1.935   0.0529 .
+y_flex         0.033472   0.030149   1.110   0.2669  
+y_cash         0.084504   0.042066   2.009   0.0446 *
+y_reval       -1.738756  89.023680  -0.020   0.9844  
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+(Dispersion parameter for binomial family taken to be 1)
+
+    Null deviance: 657.22  on 566  degrees of freedom
+Residual deviance: 615.20  on 547  degrees of freedom
+AIC: 655.2
+
+Number of Fisher Scoring iterations: 15
+
+
+
+> d$p <- predict(m)
+
+> p <- d$p
+
+> names(p) <- rownames(d)
+
+> z <- as.num(d$treat == "ONE")
+
+> names(z) <- d$treat
+
+> match <- optmatch::pairmatch(p, z = z, controls = 2, 
++     data = d)
+
+> d$match <- as.num(rownames(d) %in% names(match[!is.na(match)]))
+
+> d$match <- ifelse(d$match == 1 & d$treat == "ONE", 
++     "ONE", ifelse(d$match == 1 & d$treat == "INT", "ctrl", NA))
+
+> o[["t1_post"]] <- ttools::ttabulate(d, xs, "match", 
++     num, bin = bin, cal.date = "index", show.na = T, cens = 0)
 [1] "working on n"
 [1] "working on index"
 [1] "working on treat"
@@ -48,66 +159,16 @@
 
 > writexl::write_xlsx(o, "./out/t1.xlsx")
 
-> knitr::kable(o[["t0"]], format = "html", align = "lrrlrlr", 
+> knitr::kable(o[["t1_post"]], format = "html", align = "lrrlrlr", 
 +     escape = F, row.names = F, caption = "Balance between groups before matcing") %>% 
 +     kable_styling(full_width = F, bootstrap_options = c("hover", 
 +         "condensed", "bordered"), font_size = 14, position = "left") %>% 
-+     footnote(general = paste0("INT is the comparison groups (IBBIS integrated groups), ONE is the 1A treatment group"), 
++     footnote(general = paste0("ctrl is the matched comparison group (2:1), ONE is the 1A treatment group"), 
 +         footnote_as_chunk = F, escape = T, general_title = "") %>% 
-+     kableExtra::as_image(file = "./out/t1_crude.png")
-[1] "./out/t1_crude.png"
++     kableExtra::as_image(file = "./out/t1_match.png")
+[1] "./out/t1_match.png"
 attr(,"class")
 [1] "knit_image_paths" "knit_asis"       
 attr(,"dpi")
 [1] 300
-
-> form <- xs[!xs %in% c("n", "id", "index", "treat")]
-
-> form <- paste0("as.num(treat=='ONE')~", paste0(form, 
-+     collapse = "+"))
-
-> m <- glm(form, binomial, d)
-
-> print(list(`fit has issues: ` = summary(m)))
-$`fit has issues: `
-
-Call:
-glm(formula = form, family = binomial, data = d)
-
-Deviance Residuals: 
-   Min      1Q  Median      3Q     Max  
--2.104   0.000   0.000   0.000   1.688  
-
-Coefficients:
-              Estimate Std. Error z value Pr(>|z|)
-(Intercept)  8.790e+02  7.538e+04   0.012    0.991
-male         1.354e+00  1.130e+00   1.198    0.231
-age          7.009e-02  5.353e-02   1.309    0.190
-unempl      -2.270e+02  1.933e+04  -0.012    0.991
-b_46         2.357e+01  1.193e+04   0.002    0.998
-b_47         2.267e+01  1.835e+04   0.001    0.999
-b_84        -2.792e+00  1.777e+00  -1.572    0.116
-b_85        -6.183e-01  1.272e+00  -0.486    0.627
-b_86         2.405e+01  2.814e+04   0.001    0.999
-b_87         2.504e+01  2.433e+04   0.001    0.999
-b_88         4.779e-01  1.424e+00   0.336    0.737
-b_99        -1.767e+00  1.845e+00  -0.958    0.338
-y_none       3.608e-02  1.694e-01   0.213    0.831
-y_dgp       -7.681e-03  1.927e-01  -0.040    0.968
-y_edu        2.968e-01  2.657e+02   0.001    0.999
-y_sgdp       4.404e-02  1.722e-01   0.256    0.798
-y_baby       1.093e-01  1.865e-01   0.586    0.558
-y_flex       5.258e-01  8.449e+02   0.001    1.000
-y_cash       1.610e+00  4.031e+03   0.000    1.000
-y_reval      3.342e-01  7.228e+03   0.000    1.000
-
-(Dispersion parameter for binomial family taken to be 1)
-
-    Null deviance: 657.219  on 566  degrees of freedom
-Residual deviance:  34.771  on 547  degrees of freedom
-AIC: 74.771
-
-Number of Fisher Scoring iterations: 23
-
-
-[1] "done at 2021-08-05 00:20:15"
+[1] "done at 2021-08-05 00:51:44"
