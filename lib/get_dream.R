@@ -2,7 +2,7 @@
 # Objective: load in DREAM database and pick relevant variables
 
 # setup
-rm(list=ls()[!"echo" %in% ls()])
+rm(list=ls()[!ls() %in% "echo"])
 source("./lib/load.R")
 
 # load data

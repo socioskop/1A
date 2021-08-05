@@ -2,7 +2,7 @@
 # Objective: derive key index variables from DREAM
 
 # setup
-rm(list=ls()[!"echo" %in% ls()])
+rm(list=ls()[!ls() %in% "echo"])
 source("./lib/load.R")
 
 # reads main data, which includes DREAM data and all relevant keys:
@@ -44,7 +44,7 @@ b$index.w <- paste0(substr(b$index.w, 1, 9), "6")
 b$index.w <- ISOweek::ISOweek2date(b$index.w)
 
 # check that index/week mapping ok
-plot(b$index [b$id>7000], b$index.w[b$id>7000]) 
+plot(b$index[b$id>7000], b$index.w[b$id>7000]) 
 
 b <- merge(dgrid, b, by=c("year", "month"), all=T)
 b$time <- as.num(floor((b$date-b$index.w)/7))

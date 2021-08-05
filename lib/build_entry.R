@@ -2,7 +2,7 @@
 # Objective: build inclusion dates from dream data. Definitions are tricky to implement, lots of View() required to assert.
 
 # setup
-rm(list=ls()[!"echo" %in% ls()])
+rm(list=ls()[!ls() %in% "echo"])
 source("./lib/load.R")
 
 # reading processed dream data (still long format)

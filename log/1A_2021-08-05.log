@@ -1,6 +1,6 @@
-[1] "init at 2021-08-05 00:50:11"
+[1] "init at 2021-08-05 11:58:51"
 
-> rm(list = ls()[!"echo" %in% ls()])
+> rm(list = ls()[!ls() %in% "echo"])
 
 > source("./lib/load.R")
 
@@ -171,4 +171,6 @@ attr(,"class")
 [1] "knit_image_paths" "knit_asis"       
 attr(,"dpi")
 [1] 300
-[1] "done at 2021-08-05 00:51:44"
+
+> saveRDS(d, "./data/match")
+[1] "done at 2021-08-05 12:00:31"

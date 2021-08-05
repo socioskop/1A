@@ -3,7 +3,7 @@
 # for now, just rough measures. All outcomes are scrambled to maintain blinding as long as we are pre-SAP
 
 # setup
-rm(list=ls()[!"echo" %in% ls()])
+rm(list=ls()[!ls() %in% "echo"])
 source("./lib/load.R")
 
 # read raw dream data and derived entry dates
@@ -12,7 +12,7 @@ i <- readRDS("./data/entry")
 
 # scramble! - make sure no groups are revealed before we are ready
 # group allocation is left out for now but can be inferred from id range. We redraw id's for now.
-i$id <- i$id[sample(1:nrow(i), size = nrow(i))]
+#i$id <- i$id[sample(1:nrow(i), size = nrow(i))]
 
 # load data
 e <- data.table(e, key=c("id", "date"))
@@ -25,7 +25,7 @@ e$time <- floor(e$time/7)
 # employment definition
 e[, full := as.num(
   (y=="N/A" | (y=="771")) # no income transfer apart from flexjob (771) accepted
-  & !is.na(b)
+  & !is.na(b) # and an active branch 
   )]
 
 # stable employment definition
@@ -39,8 +39,17 @@ e[, full :=
 e[is.na(full), full := 0]
 
 # make the stable definition run to the actual end of each streak
-e[, n := 1:.N, by="id"]
 e[, full := TTR::runMax(full, 4), by="id"]
+e[is.na(full), full := 0]
+
+# intercepting here to generate binary outcomes and counts of weeks:
+in06 <- e[time>=0 & time<=26]
+in06 <- aggregate(full~id, in06, function(x) c(any = max(x, na.rm=T), wks = sum(x, na.rm=T)))
+saveRDS(in06, "./data/in06")
+
+in12 <- e[time>=0 & time<=52]
+in12 <- aggregate(full~id, in12, max)
+saveRDS(in12, "./data/in12")
 
 # initiation and streak id'ing
 e[, full.init := as.num(full==1 & dplyr::lag(full)!=1), by="id"]

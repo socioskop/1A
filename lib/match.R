@@ -1,7 +1,7 @@
 # match.R: identifies a matched comparison group.
 
 # setup
-rm(list=ls()[!"echo" %in% ls()])
+rm(list=ls()[!ls() %in% "echo"])
 source("./lib/load.R")
 library(kableExtra)
 library(magrittr)
@@ -62,7 +62,6 @@ d$match <- ifelse(d$match==1 & d$treat=="ONE", "ONE", ifelse(d$match==1 & d$trea
 # crude comparison table, after matching
 o[["t1_post"]] <- ttools::ttabulate(d, xs, "match", num, bin=bin, cal.date = "index", show.na = T, cens=0)
 writexl::write_xlsx(o, "./out/t1.xlsx")
-
 # works really well for first attempt. Might keep it here, seems reasonable.
 
 # also print table to png for easy viewing

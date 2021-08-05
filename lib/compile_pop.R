@@ -2,7 +2,7 @@
 # Objective: 1st level compilation + adding id/cpr key + cut to relevant observations
 
 # setup
-rm(list=ls()[!"echo" %in% ls()])
+rm(list=ls()[!ls() %in% "echo"])
 source("./lib/load.R")
 
 # load and stack IBBIS1A and controls

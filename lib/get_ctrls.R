@@ -2,7 +2,7 @@
 # Objective: load in the indices of the basic IBBIS RCT cohorts 
 
 # setup
-rm(list=ls()[!"echo" %in% ls()])
+rm(list=ls()[!ls() %in% "echo"])
 source("./lib/load.R")
 
 # read index dates

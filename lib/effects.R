@@ -1,7 +1,7 @@
 # effects.R: estimates treatment effects
 
 # setup
-rm(list=ls()[!"echo" %in% ls()])
+rm(list=ls()[!ls() %in% "echo"])
 source("./lib/load.R")
 library(kableExtra)
 library(survival)
@@ -13,6 +13,10 @@ d$id <- paste0("i", d$id)
 
 d <- merge(readRDS("./data/match"), 
            d, by="id")
+d <- merge(d, 
+           readRDS("./data/in06"), by="id")
+d <- merge(d, 
+           readRDS("./data/in12"), by="id")
 
 # configuring 6 months (26 weeks) time-to-event (tte) outcomes 
 d$bin_full06 <- as.numeric(NA)

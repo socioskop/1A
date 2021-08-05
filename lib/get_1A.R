@@ -2,7 +2,7 @@
 # Objective: retrieve time and id indexes for the IBBIS 1A cohort. This is used to build the full population
 
 # setup
-rm(list=ls()[!"echo" %in% ls()])
+rm(list=ls()[!ls() %in% "echo"])
 source("./lib/load.R")
 
 # read index dates

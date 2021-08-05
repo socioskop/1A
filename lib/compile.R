@@ -5,7 +5,7 @@
 # --    where the INT group members are cross-classified in both sources.
 
 # setup
-rm(list=ls()[!"echo" %in% ls()])
+rm(list=ls()[!ls() %in% "echo"])
 source("./lib/load.R")
 library(tidyverse)
 
@@ -33,14 +33,15 @@ e$cpr <- NULL
 plot(as.num(e$index.x), as.num(e$index.y)) # should match 100%
 plot(as.num(e$index.w), as.num(e$index.y)) # should match within week
 summary(as.num(e$index.x)-as.num(e$index.y)) # should be 0
-summary(as.num(e$index.w)-as.num(e$index.y)) # should be a few days
-summary(as.num(e$index.w)-as.num(e$sgdp.date))
+summary(as.num(e$index.w)-as.num(e$index.y)) # should be a few days (within weekdays)
+summary(as.num(e$index.w)-as.num(e$sgdp.date)) # difference would be measurement error since we infer it (same method) for both groups
 summary(as.num(e$sickleavedate)-as.num(e$sgdp.date)) # Diff from empirical (inferred) to reported (partially missing by design) should be around -21. OK.
 
 # we need to add background covariates from DREAM as other socio-demographic registry sources are not viable in local environment
 d <- readRDS("./data/process_dream")
 d <- d[d$id %in% e$id,]
 u <- d[d$time==0,c("id", "unempl")] # grab unempl measured at baseline for later join 
+
 d <- data.table(d[d$time<0 & d$time>= -104,], key=c("id", "time")) # we only use two years lookback
 
 mapping <- readRDS("./data/mapping")
@@ -102,4 +103,4 @@ writexl::write_xlsx(tab, "./out/desc.xlsx")
 e$index <- e$index.x
 e <- e[,c("id", "index", "study", "treat", "male", "age", "unempl", bs, ys)]
 
-saveRDS(e, "./data/1A_compiled")
+saveRDS(e, "./data/compiled")
