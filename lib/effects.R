@@ -68,5 +68,3 @@ ggsave("./out/proportions.png", scale=1.2, width=9, height=3.5)
 rm(list=c("f", "g", "u", "plot"))
 
 print(list("unempl rate and condition overlap: " =table(d$unempl, d$treat)))
-
-      
