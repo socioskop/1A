@@ -14,6 +14,7 @@ d$id <- paste0("i", d$id)
 d <- merge(readRDS("./data/match"), 
            d, by="id")
 
+# configuring time-to-event (tte) outcomes 
 d$bin_full <- as.num(d$tte_full<=104)
 d$bin_full[is.na(d$tte_full)] <- 0
 

@@ -5,7 +5,7 @@ This repo tracks the analysis of the IBBIS 1A evaluation. It also documents the 
 
 A statistical analysis plan has been finalized and registrered before engaging in analysis. The code provided here shows the complete pipeline from raw data to final results.
 
-Complete scripts are in ./lib. Log files as specified in 1A.R are in ./log. Output results are in ./out.
+Complete scripts are in ./lib. Log files as specified in 1A.R are in ./log. Output results are in ./out. 1A.R gives the structure of scripts.
 
 Major changes made in relation to the statistical analysis plan are logged below:
 
