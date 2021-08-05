@@ -8,7 +8,7 @@ source("./lib/require.R")
 echo=T
 
 # skip build phase?
-skip=T
+skip=F
 
 # log
 con = file(paste0("./log/1A_", Sys.Date(), ".log"))
