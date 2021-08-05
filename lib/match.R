@@ -80,3 +80,5 @@ knitr::kable(o[["t1_post"]],
     footnote_as_chunk = F,
     escape = T, general_title = ""
   ) %>% kableExtra::as_image(file = "./out/t1_match.png")
+
+saveRDS(d, "./data/match")

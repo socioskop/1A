@@ -20,11 +20,11 @@ e$sgdp.date <- i$sgdp.date[match(e$id, i$id)]
 
 # relative time counter since sgdp.date
 e$time <- as.num(as_date(e$date)-as_date(e$sgdp.date))
-e$time <- floor((e$date-e$sgdp.date)/7)
+e$time <- floor(e$time/7)
 
 # employment definition
 e[, full := as.num(
-  (is.na(y) | (y=="771")) # no income transfer apart from flexjob (771) accepted
+  (y=="N/A" | (y=="771")) # no income transfer apart from flexjob (771) accepted
   & !is.na(b)
   )]
 

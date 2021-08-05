@@ -1,7 +1,7 @@
 # requirements:
 
 # CRAN packages
-require <- c("tidyverse", "data.table", "lubridate", "readxl", "stringr")
+require <- c("tidyverse", "data.table", "lubridate", "readxl", "stringr", "optmatch", "kableExtra", "survival", "survminer")
 there <- installed.packages()[,"Package"]
 
 for (r in require[!require %in% there]){
