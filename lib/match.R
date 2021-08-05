@@ -8,7 +8,7 @@ library(magrittr)
 library(optmatch)
 
 # reads 1A analysis data
-d <- readRDS("./data/1A_compiled")
+d <- readRDS("./data/compiled")
 d$n <- 1
 
 # store output tables in list

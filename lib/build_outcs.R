@@ -5,6 +5,7 @@
 # setup
 rm(list=ls()[!ls() %in% "echo"])
 source("./lib/load.R")
+dir.create("./data/o")
 
 # read raw dream data and derived entry dates
 e <- readRDS("./data/process_dream")[,c("id", "year", "month", "date", "b", "y", "unempl")]
@@ -44,14 +45,27 @@ e[is.na(full), full := 0]
 
 # intercepting here to generate binary outcomes and counts of weeks:
 in06 <- e[time>=0 & time<=26]
-in06 <- aggregate(full~id, in06, function(x) c(any = max(x, na.rm=T), wks = sum(x, na.rm=T)))
-saveRDS(in06, "./data/in06")
+in06 <- aggregate(full~id, in06, function(x) c(in06 = max(x, na.rm=T), wks06 = sum(x, na.rm=T)))
+in06 <- cbind(id=in06[,1], data.frame(in06[,2]))
+saveRDS(in06, "./data/o/in06")
 
 in12 <- e[time>=0 & time<=52]
-in12 <- aggregate(full~id, in12, max)
-saveRDS(in12, "./data/in12")
+in12 <- aggregate(full~id, in12, function(x) c(in12 = max(x, na.rm=T), wks12 = sum(x, na.rm=T)))
+in12 <- cbind(id=in12[,1], data.frame(in12[,2]))
+saveRDS(in12, "./data/o/in12")
 
-# initiation and streak id'ing
+# intercepting here to generate binary outcomes at specific times:
+at06 <- e[time==26, c("id", "full")]; colnames(at06)[2] <- "at06"
+saveRDS(at06, "./data/o/at06")
+
+at12 <- e[time==52, c("id", "full")]; colnames(at12)[2] <- "at12"
+saveRDS(at12, "./data/o/at12")
+
+# intercepting here to get the status in weeks 0-52
+f <- e[time>=0 & time<=52, c("id", "time", "full", "unempl")]
+saveRDS(f, "./data/o/full")
+
+# back in long data: initiation and streak id'ing
 e[, full.init := as.num(full==1 & dplyr::lag(full)!=1), by="id"]
 e[time<0, full.init := 0] # can't start before sgdp.date
 e[, full.id := cumsum(full.init), by="id"]
@@ -69,4 +83,4 @@ e[!is.finite(tte_full), tte_full := NA]
 e <- e[,c("id", "sgdp.date", "full.date", "tte_full")]
 e <- unique(e)
 
-saveRDS(e, "./data/outcs")
+saveRDS(e, "./data/o/outcs")

@@ -41,7 +41,6 @@ summary(as.num(e$sickleavedate)-as.num(e$sgdp.date)) # Diff from empirical (infe
 d <- readRDS("./data/process_dream")
 d <- d[d$id %in% e$id,]
 u <- d[d$time==0,c("id", "unempl")] # grab unempl measured at baseline for later join 
-
 d <- data.table(d[d$time<0 & d$time>= -104,], key=c("id", "time")) # we only use two years lookback
 
 mapping <- readRDS("./data/mapping")
@@ -85,10 +84,10 @@ bs <- bs[bs %in% colnames(d)]
 # merge with dream covariates 
 e <- merge(e, d, by="id")
 e <- merge(e, u, by="id") # ... and unempl rate at baseline
-e$id <- as.chr(paste0("i", e$id)) # not publishing actual ids
 
 # basic data description
 d <- e
+d$id <- as.chr(paste0("i", d$id)) # not publishing actual ids
 tab <- data.frame(var=colnames(d), stringsAsFactors = F)
 tab$uniques <- sapply(d, function(x) length(unique(x)))
 tab$NAs <- sapply(d, function(x) sum(is.na(x)))

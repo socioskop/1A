@@ -8,10 +8,10 @@ source("./lib/require.R")
 echo=T
 
 # skip build phase?
-skip=F
+skip=T
 
 # log
-con = file(paste0("./log/1A_", Sys.Date(), ".log"))
+con = file(paste0("./log/1A_", Sys.time(), ".log"))
 
 sink(file=con, append=T)
 print(paste0("init at ", Sys.time()))
@@ -52,7 +52,7 @@ if (!skip){
   # compile data for analysis
   source("./lib/compile.R", 
          echo = echo, print.eval = echo, max.deparse.length = 1e5)
-}
+} else {print("skipping build phase...")}
 
 # post SAP-commitment:
 # matching
