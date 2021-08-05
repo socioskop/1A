@@ -13,5 +13,5 @@ Major changes made in relation to the statistical analysis plan are logged below
   - as some variables are not available, educational level, diagnoses and recent hospital treatments are not used for propensity score matching. 
   - branch codes and income transfer categories are used as propensity score matching factors in order to capture the socioeconomic status and previous work experience. 
 
-### 2021-08-04:
+### 2021-08-05:
   - avg. unempl rate at baseline almost perfectly predicts condition. Unemployment rate is therefore omitted as a covariate in order to have models convering.
