@@ -8,5 +8,14 @@ library(survival)
 library(survminer)
 
 # reads 1A analysis data
-d <- readRDS("./data/match")
+d <- readRDS("./data/outcs")
+d$id <- paste0("i", d$id)
 
+d <- merge(readRDS("./data/match"), 
+           d, by="id")
+
+d$bin_full <- as.num(d$tte_full<=104)
+d$bin_full[is.na(d$tte_full)] <- 0
+
+d$tte_full[d$tte_full>104] <- 104
+s <- surv
